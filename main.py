@@ -39,10 +39,16 @@ async def query_parquet(
             columns = [desc[0] for desc in result.description]
             rows = result.fetchall()
             data = [dict(zip(columns, row)) for row in rows]
+            query2= f"SELECT * FROM read_parquet('{s3_path}')"
+            result2 = con.execute(query2)
+            columns2 = [desc[0] for desc in result2.description]
+            rows2 = result2.fetchall()
+            data2 = [dict(zip(columns2, row)) for row in rows2]
+
             return {
                 "data": data,
                 "columns": columns,
-                "row_count": len(data)
+                "row_count": len(data2)
             }
     except duckdb.IOException as e:
         raise HTTPException(404, f"File not found: {str(e)}")
