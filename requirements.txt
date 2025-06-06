@@ -3,3 +3,4 @@ uvicorn
 duckdb
 python-dotenv
 pytz
+fastapi_pagination
