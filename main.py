@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi_pagination import Page, add_pagination, paginate, Params
+from fastapi_pagination.customization import CustomizedPage, UseParamsFields
 import duckdb
 from contextlib import closing
 from dotenv import load_dotenv
@@ -7,6 +8,13 @@ load_dotenv()
 import os
 
 app = FastAPI()
+
+CustomPage = CustomizedPage[
+    Page[dict],
+    UseParamsFields(
+        size=Query(100, ge=1, le=1000),
+    ),
+]
 
 AWS_REGION = os.getenv("AWS_REGION")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -18,7 +26,7 @@ async def startup():
     duckdb.execute("INSTALL httpfs;")
     duckdb.execute("LOAD httpfs;")
 
-@app.get("/query-parquet", response_model=Page[dict])
+@app.get("/query-parquet", response_model=CustomPage)
 async def query_parquet(
     statename: str, 
     dname: str, 
