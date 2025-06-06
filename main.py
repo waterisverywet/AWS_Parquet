@@ -1,20 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends, Query
-from fastapi_pagination import Page, add_pagination, paginate, Params
-from fastapi_pagination.customization import CustomizedPage, UseParamsFields
+from fastapi import FastAPI, HTTPException, Query
 import duckdb
 from contextlib import closing
 from dotenv import load_dotenv
-load_dotenv()
 import os
 
+load_dotenv()
 app = FastAPI()
-
-CustomPage = CustomizedPage[
-    Page[dict],
-    UseParamsFields(
-        size=Query(100, ge=1, le=1000),
-    ),
-]
 
 AWS_REGION = os.getenv("AWS_REGION")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -26,11 +17,12 @@ async def startup():
     duckdb.execute("INSTALL httpfs;")
     duckdb.execute("LOAD httpfs;")
 
-@app.get("/query-parquet", response_model=CustomPage)
+@app.get("/query-parquet")
 async def query_parquet(
-    statename: str, 
-    dname: str, 
-    params: Params = Depends()
+    statename: str,
+    dname: str,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0)
 ):
     if not statename.islower() or not dname.islower():
         raise HTTPException(400, "Names must be lowercase")
@@ -42,17 +34,17 @@ async def query_parquet(
             con.execute(f"SET s3_region='{AWS_REGION}';")
             con.execute(f"SET s3_access_key_id='{AWS_ACCESS_KEY_ID}';")
             con.execute(f"SET s3_secret_access_key='{AWS_SECRET_ACCESS_KEY}';")
-
-            result = con.execute("SELECT * FROM read_parquet(?)", [s3_path])
+            query = f"SELECT * FROM read_parquet('{s3_path}') LIMIT {limit} OFFSET {offset};"
+            result = con.execute(query)
             columns = [desc[0] for desc in result.description]
             rows = result.fetchall()
             data = [dict(zip(columns, row)) for row in rows]
-
-            return paginate(data, params)
-                
+            return {
+                "data": data,
+                "columns": columns,
+                "row_count": len(data)
+            }
     except duckdb.IOException as e:
         raise HTTPException(404, f"File not found: {str(e)}")
     except Exception as e:
         raise HTTPException(500, f"Query failed: {str(e)}")
-
-add_pagination(app)
