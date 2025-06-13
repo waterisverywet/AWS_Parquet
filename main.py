@@ -21,43 +21,33 @@ async def startup():
 async def query_parquet(
     statename: str,
     dname: str,
-    page: int = Query(0, ge=0),
-    page_size: int = Query(10, ge=1)
+    
 ):
     if not statename.islower() or not dname.islower():
         raise HTTPException(400, "Names must be lowercase")
 
     s3_path = f"s3://{S3_BUCKET}/state={statename}/dname={dname}/{dname}.parquet"
-    
+
     try:
         with closing(duckdb.connect()) as con:
             con.execute(f"SET s3_region='{AWS_REGION}';")
             con.execute(f"SET s3_access_key_id='{AWS_ACCESS_KEY_ID}';")
             con.execute(f"SET s3_secret_access_key='{AWS_SECRET_ACCESS_KEY}';")
-            
-            # Get total row count
-            count_query = f"SELECT COUNT(*) FROM read_parquet('{s3_path}')"
-            total_rows = con.execute(count_query).fetchone()[0]
-            
-            # Get paginated data
-            data_query = f"""
-                SELECT * 
-                FROM read_parquet('{s3_path}') 
-                ORDER BY (SELECT 0)
-                LIMIT {page_size} 
-                OFFSET {page * page_size}
-            """
-            result = con.execute(data_query)
+            query = f"SELECT * FROM read_parquet('{s3_path}')"
+            result = con.execute(query)
             columns = [desc[0] for desc in result.description]
             rows = result.fetchall()
             data = [dict(zip(columns, row)) for row in rows]
+            query2= f"SELECT * FROM read_parquet('{s3_path}')"
+            result2 = con.execute(query2)
+            columns2 = [desc[0] for desc in result2.description]
+            rows2 = result2.fetchall()
+            data2 = [dict(zip(columns2, row)) for row in rows2]
 
             return {
                 "data": data,
                 "columns": columns,
-                "total_rows": total_rows,
-                "page": page,
-                "page_size": page_size
+                "row_count": len(data2)
             }
     except duckdb.IOException as e:
         raise HTTPException(404, f"File not found: {str(e)}")
