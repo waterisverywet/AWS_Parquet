@@ -50,7 +50,7 @@ async def query_parquet(
             data_query = f"""
                 SELECT * 
                 FROM read_parquet('{s3_path}') 
-                ORDER BY (SELECT 0)  -- Maintain consistent order
+                ORDER BY id  -- Maintain consistent order
                 LIMIT {page_size} 
                 OFFSET {(page - 1) * page_size}
             """
