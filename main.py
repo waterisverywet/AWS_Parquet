@@ -44,9 +44,11 @@ async def query_parquet(
             data_query = f"""
                 SELECT * 
                 FROM read_parquet('{s3_path}') 
+                ORDER BY (SELECT 0)  -- Forces consistent ordering
                 LIMIT {page_size} 
                 OFFSET {page * page_size}
             """
+
             result = con.execute(data_query)
             columns = [desc[0] for desc in result.description]
             rows = result.fetchall()
