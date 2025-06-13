@@ -21,8 +21,7 @@ async def startup():
 async def query_parquet(
     statename: str,
     dname: str,
-    limit: int = Query(100, ge=1, le=1000),
-    offset: int = Query(0, ge=0)
+    
 ):
     if not statename.islower() or not dname.islower():
         raise HTTPException(400, "Names must be lowercase")
@@ -34,7 +33,7 @@ async def query_parquet(
             con.execute(f"SET s3_region='{AWS_REGION}';")
             con.execute(f"SET s3_access_key_id='{AWS_ACCESS_KEY_ID}';")
             con.execute(f"SET s3_secret_access_key='{AWS_SECRET_ACCESS_KEY}';")
-            query = f"SELECT * FROM read_parquet('{s3_path}') LIMIT {limit} OFFSET {offset};"
+            query = f"SELECT * FROM read_parquet('{s3_path}')"
             result = con.execute(query)
             columns = [desc[0] for desc in result.description]
             rows = result.fetchall()
