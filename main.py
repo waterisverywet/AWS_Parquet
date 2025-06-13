@@ -17,13 +17,20 @@ async def startup():
     duckdb.execute("INSTALL httpfs;")
     duckdb.execute("LOAD httpfs;")
 
+from typing import Optional
+
 @app.get("/query-parquet")
 async def query_parquet(
     statename: str,
     dname: str,
-    page: int = Query(1, ge=1),  # 1-based page number
-    page_size: int = Query(10, ge=1, le=100)
+    page: Optional[int] = Query(0, ge=0),  # Allow Optional
+    page_size: Optional[int] = Query(10, ge=1)
 ):
+    # Convert None/undefined to defaults
+    page = page or 0
+    page_size = page_size or 10
+    # Rest of your code
+
     if not statename.islower() or not dname.islower():
         raise HTTPException(400, "Names must be lowercase")
 
