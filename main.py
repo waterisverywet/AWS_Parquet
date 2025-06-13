@@ -31,7 +31,6 @@ async def query_parquet(
     
     try:
         with closing(duckdb.connect()) as con:
-            # Set S3 credentials
             con.execute(f"SET s3_region='{AWS_REGION}';")
             con.execute(f"SET s3_access_key_id='{AWS_ACCESS_KEY_ID}';")
             con.execute(f"SET s3_secret_access_key='{AWS_SECRET_ACCESS_KEY}';")
@@ -44,11 +43,10 @@ async def query_parquet(
             data_query = f"""
                 SELECT * 
                 FROM read_parquet('{s3_path}') 
-                ORDER BY (SELECT 0)  -- Forces consistent ordering
+                ORDER BY (SELECT 0)
                 LIMIT {page_size} 
                 OFFSET {page * page_size}
             """
-
             result = con.execute(data_query)
             columns = [desc[0] for desc in result.description]
             rows = result.fetchall()
