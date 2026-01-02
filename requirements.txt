@@ -1,6 +1,18 @@
-fastapi
-uvicorn
-duckdb
-python-dotenv
-pytz
-fastapi_pagination
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Data Processing
+duckdb==0.9.1
+
+# Configuration
+python-dotenv==1.0.0
+
+# Utilities
+pytz==2023.3
+fastapi-pagination==0.12.14
+
+# Development (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+requests==2.31.0
